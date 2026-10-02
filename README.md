@@ -62,28 +62,44 @@ from the `[JavaScript] Flags=` line in `/etc/palm/browser.conf`. The node binary
 | `--nofull_compiler`, `--noopt`, `--nooptimize_ast`, `--use_flow_graph`, `--nolazy` | bug |
 
 Performance cost (node, same V8, `research/probes/v8-bench.js`): recursion-heavy code is about 25% slower,
-while object, string and dictionary work is about the same or slightly faster. Nothing felt slower during
-the tests.
+while object, string and dictionary work is about the same or slightly faster.
+
+On the device (LunaSysMgr, fresh Luna restart, the same 8-app workload each time:
+Email, Contacts, Messaging, Calendar, Preware 2, Preware, Dash Weather, Browser):
+
+| run | idle RSS | peak (VmHWM) | final RSS | Luna CPU during the workload |
+|---|---|---|---|---|
+| flag ON #1 | 41,364 kB | 53,508 kB | 53,420 kB | 367 ticks |
+| flag OFF | 41,372 kB | 53,608 kB | 53,412 kB | 542 ticks |
+| flag ON #2 | 41,032 kB | 54,012 kB | 53,196 kB | 359 ticks |
+
+Memory is unchanged within noise. CPU was lower with the flag, but that rests on a single OFF run,
+so read it as "no worse".
 
 The web browser (BrowserServer) reads its flags from `/etc/palm/browser-app.conf`. The package leaves that
 file alone, so web pages run exactly as before.
 
 ## The package: `v8fix/`
 
-`v8fix/bin/org.webosarchive.v8fix_1.0.0_all.ipk` (5786 bytes, md5 `73db5fbcb603a72c090fc3f0734c06ad`).
+`v8fix/bin/org.webosarchive.v8fix_1.0.1_all.ipk` (6474 bytes, md5 `4128063aa9186de0ba3cfa32cabbfdab`).
+It is also proposed for the WOSA Modernize feed (webOSArchive/preware-modernize-feed).
 Rebuild it with `v8fix/build.sh`.
 
 - **Install** (`postinst` / `pmPostInstall.script`, run as root):
-  1. If the flag is already set, it does nothing.
-  2. Instead of trusting the version string, it **tests for the bug** with the device's own node (same
+  1. It does nothing unless `/etc/palm-build-info` says webOS **2.1.0**. Preware's "ignore device"
+     setting, WebOS Quick Install and plain `ipkg` skip the feed's version gate, so the script has
+     its own.
+  2. If the flag is already set, it does nothing.
+  3. It also **tests for the bug** with the device's own node (same
      `libv8.so`). It patches only if the bug is present **and** the flag fixes it, so on any other webOS
      version it does nothing.
-  3. It backs up `browser.conf` to `browser.conf.v8fix-orig`, appends the flag to the `Flags=` line of the
+  4. It backs up `browser.conf` to `browser.conf.v8fix-orig`, appends the flag to the `Flags=` line of the
      `[JavaScript]` section only, checks the result, and restores the backup if the edit failed.
 - **Remove** (`prerm`): removes only the flag token, so other changes to the file are kept, and deletes the
   backup. It does not restart Luna, because prerm can run inside LunaSysMgr.
 - Restart Luna after installing or removing (`PostInstallFlags`/`PostRemoveFlags: RestartLuna`).
-- Control `Source`: Feed "WOSA Modernize", `MinWebOSVersion` 2.0.0, `MaxWebOSVersion` 2.1.9.
+- No dependencies. Version gating lives in the feed index (`MinWebOSVersion` = `MaxWebOSVersion` = 2.1.0),
+  not in the control file, following the feed's conventions.
 
 Tested install and remove paths on the device:
 
@@ -92,23 +108,9 @@ Tested install and remove paths on the device:
 | Palm App Installer (`appinstaller/installNoVerify`, same as WebOS Quick Install / palm-install) | install OK, `pmPostInstall.script` applied the flag |
 | Preware's package service (`ipkgservice/install` from an HTTP URL, same as a feed install) | install OK, `postinst` applied the flag |
 | Preware's package service (`ipkgservice/remove`) | remove OK, `prerm` ran, `browser.conf` byte-identical to the original |
+| Preware's package service, upgrade 1.0.0 -> 1.0.1 | OK, the flag stays set once |
+| 1.0.1 postinst run against a fake 2.2.4 / 3.0.5 / 1.4.5 build-info | refuses ("for webOS 2.1.0 only"), `browser.conf` untouched |
 | Palm App Installer remove | refused (`returnValue: false`): it only removes packages that have an `appinfo.json`. Remove the package from Preware. |
-
-Feed stanza for the Modernize feed (fill in your own LastUpdated/Icon if wanted):
-
-```
-Package: org.webosarchive.v8fix
-Version: 1.0.0
-Depends: 
-Section: System
-Architecture: all
-MD5Sum: 73db5fbcb603a72c090fc3f0734c06ad
-Size: 5786
-Filename: org.webosarchive.v8fix_1.0.0_all.ipk
-Description: Fix Enyo 2 apps on webOS 2.1.0 (V8 compiler bug)
-Maintainer: webOS Archive
-Source: (same JSON as v8fix/control/control)
-```
 
 ## Test results (summary; details in `research/results/RESULTS.md`)
 

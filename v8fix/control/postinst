@@ -16,6 +16,14 @@ BACKUP=$CONF.v8fix-orig
 FLAG=--always_full_compiler
 PROBE=/tmp/v8fix-probe.js
 
+# Only webOS 2.1.0. The feed gates on this too, but Preware's "ignore device"
+# setting, WebOS Quick Install and plain ipkg skip the feed's checks.
+OSVER=`grep PRODUCT_VERSION_STRING /etc/palm-build-info 2>/dev/null | head -n 1 | sed -e 's/.*[^0-9.]\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/'`
+if [ "$OSVER" != "2.1.0" ]; then
+    echo "v8fix: this is for webOS 2.1.0 only (found '$OSVER'). Not patching."
+    exit 0
+fi
+
 mount -o remount,rw / 2>/dev/null || true
 
 if [ ! -f "$CONF" ]; then
