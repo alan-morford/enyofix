@@ -1,0 +1,10 @@
+<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width"><title>v8test</title></head>
+<body style="font:28px sans-serif;text-align:center;margin-top:120px"><div id="r">running</div>
+<script>
+function t() { return true; }
+var r = {filter: t}, a = {}, b = {};
+(r.filter ? !r.filter() : 0) || (a.k = 1);
+((true ? false : 0) || (b.k = 1));
+var ok = a.k === 1 && b.k === 1;
+var d = document.getElementById("r"); d.innerHTML = ok ? "Browser V8: OK" : "Browser V8: BUG present"; d.style.color = ok ? "green" : "red";
+</script></body></html>

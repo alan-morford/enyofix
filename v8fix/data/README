@@ -1,0 +1,12 @@
+org.webosarchive.v8fix
+
+webOS 2.1.0's V8 (/usr/lib/libv8.so) compiles `(c ? false : 0) || (x = y)` wrongly
+with its classic code generator, so the right side never runs. Minified Enyo 2 hits
+this in enyo.mixin: mixin defaults are lost, property change notifications never
+fire, and Enyo 2 apps render broken.
+
+The install script adds --always_full_compiler to the [JavaScript] Flags= line of
+/etc/palm/browser.conf (read by LunaSysMgr, which runs all apps), but only after
+testing with node (same libv8.so) that the bug is present and that the flag fixes it.
+A backup is kept at /etc/palm/browser.conf.v8fix-orig. Removing the package takes
+the flag out again. Restart Luna after installing or removing.

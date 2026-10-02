@@ -1,0 +1,72 @@
+#!/bin/sh
+# org.webosarchive.v8fix: work around a V8 code generation bug in webOS 2.1.0.
+#
+# The V8 in webOS 2.1.0 (/usr/lib/libv8.so) compiles `(c ? false : 0) || (x = y)`
+# wrongly with its classic code generator: the right side never runs. Minified
+# Enyo 2 hits this in enyo.mixin, so Enyo 2 apps (e.g. Preware 2) render broken.
+# V8's full code generator gets it right, so add --always_full_compiler to the
+# JavaScript flags of LunaSysMgr, which runs all apps (/etc/palm/browser.conf).
+# The web browser (BrowserServer, /etc/palm/browser-app.conf) is left alone.
+#
+# Rather than trusting the OS version, test the bug with node, which links the
+# same libv8.so, and only patch when the bug is there and the flag fixes it.
+
+CONF=/etc/palm/browser.conf
+BACKUP=$CONF.v8fix-orig
+FLAG=--always_full_compiler
+PROBE=/tmp/v8fix-probe.js
+
+mount -o remount,rw / 2>/dev/null || true
+
+if [ ! -f "$CONF" ]; then
+    echo "v8fix: $CONF not found, nothing to do."
+    exit 0
+fi
+
+if grep -q "^Flags=.*$FLAG" "$CONF"; then
+    echo "v8fix: $FLAG is already set."
+    exit 0
+fi
+
+NODE=""
+for n in /bin/node /usr/bin/node; do
+    [ -x "$n" ] && { NODE=$n; break; }
+done
+if [ -z "$NODE" ]; then
+    echo "v8fix: node not found, cannot test for the bug. Not patching."
+    exit 0
+fi
+
+cat > "$PROBE" <<'EOF'
+function t() { return true; }
+var r = {filter: t}, a = {}, b = {};
+(r.filter ? !r.filter() : 0) || (a.k = 1);
+((true ? false : 0) || (b.k = 1));
+console.log(a.k === 1 && b.k === 1 ? "OK" : "BUG");
+EOF
+DEFAULT=`$NODE "$PROBE" 2>/dev/null | tail -n 1`
+FIXED=`$NODE $FLAG "$PROBE" 2>/dev/null | tail -n 1`
+rm -f "$PROBE"
+
+if [ "$DEFAULT" != "BUG" ]; then
+    echo "v8fix: this V8 does not have the bug ($DEFAULT). Not patching."
+    exit 0
+fi
+if [ "$FIXED" != "OK" ]; then
+    echo "v8fix: $FLAG does not fix the bug here ($FIXED). Not patching."
+    exit 0
+fi
+
+[ -f "$BACKUP" ] || cp -p "$CONF" "$BACKUP"
+
+# Append the flag to the Flags= line of the [JavaScript] section only.
+sed -i "/^\[JavaScript\]/,/^\[/ s|^\(Flags=.*\)$|\1 $FLAG|" "$CONF"
+
+if ! sed -n "/^\[JavaScript\]/,/^\[/p" "$CONF" | grep -q "^Flags=.*$FLAG"; then
+    echo "v8fix: could not add $FLAG to $CONF, restoring the original."
+    cp -p "$BACKUP" "$CONF"
+    exit 1
+fi
+
+echo "v8fix: added $FLAG to $CONF. Restart Luna to apply."
+exit 0

@@ -1,0 +1,18 @@
+#!/bin/sh
+# org.webosarchive.v8fix: remove --always_full_compiler from /etc/palm/browser.conf.
+# Only our flag is removed, so changes other packages made since are kept.
+# This runs inside LunaSysMgr on removal, so it must not restart Luna itself.
+
+CONF=/etc/palm/browser.conf
+BACKUP=$CONF.v8fix-orig
+FLAG=--always_full_compiler
+
+mount -o remount,rw / 2>/dev/null || true
+
+if [ -f "$CONF" ]; then
+    sed -i "/^\[JavaScript\]/,/^\[/ s| $FLAG||g" "$CONF"
+fi
+rm -f "$BACKUP"
+
+echo "v8fix: removed $FLAG from $CONF. Restart Luna to apply."
+exit 0

@@ -1,0 +1,8 @@
+com.palm.app.browser {"target":"http://127.0.0.1:8123/v8test.html"}
+com.palm.app.browser {"target":"http://example.com/"}
+com.palm.app.browser {"target":"http://info.cern.ch/"}
+com.palm.app.browser {"target":"http://frogfind.com/"}
+com.palm.app.browser {"target":"http://68k.news/"}
+com.palm.app.browser {"target":"http://www.webosarchive.org/"}
+com.palm.app.browser {"target":"https://en.m.wikipedia.org/wiki/Palm_Pre"}
+com.palm.app.browser {"target":"https://lite.cnn.com/"}
