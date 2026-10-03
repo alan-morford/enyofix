@@ -80,5 +80,5 @@ if ! sed -n "/^\[JavaScript\]/,/^\[/p" "$CONF" | grep -q "^Flags=.*$FLAG"; then
     exit 1
 fi
 
-echo "v8fix: added $FLAG to $CONF. Restart Luna or the phone to apply."
+echo "v8fix: added $FLAG to $CONF. Restart the phone to apply."
 exit 0

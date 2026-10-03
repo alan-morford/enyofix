@@ -9,6 +9,6 @@ The install script adds --always_full_compiler to the [JavaScript] Flags= line o
 /etc/palm/browser.conf (read by LunaSysMgr, which runs all apps), but only after
 testing with node (same libv8.so) that the bug is present and that the flag fixes it.
 A backup is kept at /etc/palm/browser.conf.v8fix-orig. Removing the package takes
-the flag out again. Restart Luna after installing or removing (or restart
-the phone if Enyo 2 apps still look broken). Only webOS 2.0.x-2.1.x is patched;
+the flag out again. Restart the phone after installing or removing
+(Preware prompts for it). Only webOS 2.0.x-2.1.x is patched;
 2.2 and later ship a newer V8 without the bug.

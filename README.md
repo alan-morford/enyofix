@@ -101,7 +101,7 @@ file alone, so web pages run exactly as before.
 
 ## The package: `v8fix/`
 
-`v8fix/bin/org.webosarchive.v8fix_1.0.2_all.ipk` (6844 bytes, md5 `0cb23b2bfb3ca8b2a33399d3118a001a`).
+`v8fix/bin/org.webosarchive.v8fix_1.0.2_all.ipk` (6956 bytes, md5 `48161b5e9e8bd8280f04f945a8664b0c`).
 It is also proposed for the WOSA Modernize feed (webOSArchive/preware-modernize-feed).
 Rebuild it with `v8fix/build.sh`.
 
@@ -117,8 +117,9 @@ Rebuild it with `v8fix/build.sh`.
      `[JavaScript]` section only, checks the result, and restores the backup if the edit failed.
 - **Remove** (`prerm`): removes only the flag token, so other changes to the file are kept, and deletes the
   backup. It does not restart Luna, because prerm can run inside LunaSysMgr.
-- Restart Luna after installing or removing (`PostInstallFlags`/`PostRemoveFlags: RestartLuna`). If Enyo 2 apps
-  still look broken (seen on the Veer after a WebOS Quick Install), restart the phone.
+- After installing (or updating or removing) this package, Preware prompts the user to reboot the device
+  (`PostInstallFlags`/`PostUpdateFlags`/`PostRemoveFlags: RestartDevice`). 1.0.1 asked for a Luna restart only;
+  the Veer on 2.1.2 needed a full reboot before the fix applied. WebOS Quick Install doesn't prompt, so reboot by hand.
 - No dependencies. Version gating lives in the feed index (`MinWebOSVersion` 2.0.0, `MaxWebOSVersion` 2.1.2),
   not in the control file, following the feed's conventions.
 
