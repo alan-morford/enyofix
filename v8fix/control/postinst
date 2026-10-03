@@ -1,7 +1,7 @@
 #!/bin/sh
-# org.webosarchive.v8fix: work around a V8 code generation bug in webOS 2.1.0.
+# org.webosarchive.v8fix: work around a V8 code generation bug in webOS 2.0.x-2.1.x.
 #
-# The V8 in webOS 2.1.0 (/usr/lib/libv8.so) compiles `(c ? false : 0) || (x = y)`
+# The V8 in webOS 2.0.x-2.1.x (/usr/lib/libv8.so) compiles `(c ? false : 0) || (x = y)`
 # wrongly with its classic code generator: the right side never runs. Minified
 # Enyo 2 hits this in enyo.mixin, so Enyo 2 apps (e.g. Preware 2) render broken.
 # V8's full code generator gets it right, so add --always_full_compiler to the
@@ -16,13 +16,17 @@ BACKUP=$CONF.v8fix-orig
 FLAG=--always_full_compiler
 PROBE=/tmp/v8fix-probe.js
 
-# Only webOS 2.1.0. The feed gates on this too, but Preware's "ignore device"
+# Only webOS 2.0.x-2.1.x. 2.0.1, 2.1.0 and 2.1.2 have the bug; 2.2.x ships a
+# newer V8 without it. The feed gates on this too, but Preware's "ignore device"
 # setting, WebOS Quick Install and plain ipkg skip the feed's checks.
 OSVER=`grep PRODUCT_VERSION_STRING /etc/palm-build-info 2>/dev/null | head -n 1 | sed -e 's/.*[^0-9.]\([0-9][0-9]*\.[0-9][0-9.]*\).*/\1/'`
-if [ "$OSVER" != "2.1.0" ]; then
-    echo "v8fix: this is for webOS 2.1.0 only (found '$OSVER'). Not patching."
-    exit 0
-fi
+case "$OSVER" in
+    2.0.*|2.1.*) ;;
+    *)
+        echo "v8fix: this is for webOS 2.0 and 2.1 only (found '$OSVER'). Not patching."
+        exit 0
+        ;;
+esac
 
 mount -o remount,rw / 2>/dev/null || true
 
@@ -76,5 +80,5 @@ if ! sed -n "/^\[JavaScript\]/,/^\[/p" "$CONF" | grep -q "^Flags=.*$FLAG"; then
     exit 1
 fi
 
-echo "v8fix: added $FLAG to $CONF. Restart Luna to apply."
+echo "v8fix: added $FLAG to $CONF. Restart Luna or the phone to apply."
 exit 0
